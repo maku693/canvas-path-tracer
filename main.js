@@ -167,7 +167,7 @@
       if (depth === 5) {
         return new Vec3(0, 0, 0);
       }
-      
+
       const INTERSECTION = this.intersectionWithScene(scene);
       if (!INTERSECTION) {
         return new Vec3(0, 0, 0);
@@ -211,9 +211,9 @@
 
   class Sample {
     constructor(data, width, height) {
-      this.data = data;  
-      this.width = width;  
-      this.height = height;  
+      this.data = data;
+      this.width = width;
+      this.height = height;
     }
   }
 
@@ -276,7 +276,7 @@
     if (count > 1000) {
       return;
     }
-    
+
     const NEW_SAMPLE = sample(previousSample.width, previousSample.height);
 
     let data = [];
