@@ -236,13 +236,13 @@
         const BLUE_MATERIAL = new Material(new Vec3(0, 0, 1), new Vec3(0, 0, 0));
         const YELLOW_MATERIAL = new Material(new Vec3(1, 1, 0), new Vec3(0, 0, 0));
         const SCENE = new Scene(CAMERA, [
-          new Plane(new Vec3(2, 0, 0), new Vec3(-2, 0, 0), BLUE_MATERIAL), // left
-          new Plane(new Vec3(-2, 0, 0), new Vec3(2, 0, 0), YELLOW_MATERIAL), // right
-          new Plane(new Vec3(0, 4, 0), new Vec3(0, -2, 0), WHITE_MATERIAL), // top
-          new Plane(new Vec3(0, 0, 0), new Vec3(0, 2, 0), WHITE_MATERIAL), // bottom
-          new Plane(new Vec3(0, 0, 2), new Vec3(0, 0, -2), WHITE_MATERIAL), // back
-          new Plane(new Vec3(0, 0, -2), new Vec3(0, 0, 2), WHITE_MATERIAL), // front
           new Sphere(new Vec3(0, 7.9, 0), 4, LIGHT_MATERIAL), // light
+          new Plane(new Vec3(2, 0, 0), new Vec3(-1, 0, 0), BLUE_MATERIAL), // left
+          new Plane(new Vec3(-2, 0, 0), new Vec3(1, 0, 0), YELLOW_MATERIAL), // right
+          new Plane(new Vec3(0, 4, 0), new Vec3(0, -1, 0), WHITE_MATERIAL), // top
+          new Plane(new Vec3(0, 0, 0), new Vec3(0, 1, 0), WHITE_MATERIAL), // bottom
+          new Plane(new Vec3(0, 0, 2), new Vec3(0, 0, -1), WHITE_MATERIAL), // back
+          new Plane(new Vec3(0, 0, -2), new Vec3(0, 0, 1), WHITE_MATERIAL), // front
           new Sphere(new Vec3(0, 1, 0), 1, WHITE_MATERIAL)
         ]);
 
