@@ -209,98 +209,101 @@
     }
   }
 
-  class Sample {
-    constructor(data, width, height) {
-      this.data = data;
+  class Renderer {
+    constructor(width, height) {
       this.width = width;
       this.height = height;
+      this.data = this.sample();
+      this.sampleCount = 1;
     }
-  }
+    sample() {
+      const data = [];
 
-  function sample(width, height) {
-    let data = [];
-
-    for (let y = 0; y < height; y++) {
-      for (let x = 0; x < width; x++) {
-        const X = x / width - 0.5;
-        const Y = (y / height - 0.5) * -1;
-
-        const CAMERA = new Camera(
-          new Vec3(0, 2, -5),
-          new Vec3(1, 1, 1),
-          0.028,
-          new Vec3(0.036, 0.024)
-        );
-        const LIGHT_MATERIAL = new Material(new Vec3(0, 0, 0), new Vec3(10, 10, 10));
-        const WHITE_MATERIAL = new Material(new Vec3(1, 1, 1), new Vec3(0, 0, 0));
-        const BLUE_MATERIAL = new Material(new Vec3(0, 0, 1), new Vec3(0, 0, 0));
-        const YELLOW_MATERIAL = new Material(new Vec3(1, 1, 0), new Vec3(0, 0, 0));
-        const SCENE = new Scene(CAMERA, [
-          new Plane(new Vec3(2, 0, 0), new Vec3(-1, 0, 0), BLUE_MATERIAL), // left
-          new Plane(new Vec3(-2, 0, 0), new Vec3(1, 0, 0), YELLOW_MATERIAL), // right
-          new Plane(new Vec3(0, 4, 0), new Vec3(0, -1, 0), WHITE_MATERIAL), // top
-          new Plane(new Vec3(0, 0, 0), new Vec3(0, 1, 0), WHITE_MATERIAL), // bottom
-          new Plane(new Vec3(0, 0, 2), new Vec3(0, 0, -1), WHITE_MATERIAL), // back
-          new Plane(new Vec3(0, 0, -2), new Vec3(0, 0, 1), WHITE_MATERIAL), // front
-          new Sphere(new Vec3(0, 7.95, 0), 4, LIGHT_MATERIAL), // light
-          new Sphere(new Vec3(0, 1, 0), 1, WHITE_MATERIAL)
-        ]);
-
-        const RAY = SCENE.camera.rayForCoordinate(X, Y);
-        const COLOR = RAY.tracePathInScene(SCENE);
-
-        data.push(COLOR);
-      }
-    }
-
-    return new Sample(data, width, height);
-  }
-
-  function draw(sample) {
-    const CTX = canvas.getContext('2d');
-    const sRGB_GAMUT = 1 / 2.2;
-
-    const IMAGE_DATA = new ImageData(sample.width, sample.height);
-    for (let i = 0; i < sample.data.length; i++) {
-      const CORRECTED_COLOR = Vec3.pow(sample.data[i], sRGB_GAMUT);
-      const HEAD_INDEX = i * 4;
-      IMAGE_DATA.data[HEAD_INDEX] = CORRECTED_COLOR.x * 255;
-      IMAGE_DATA.data[HEAD_INDEX + 1] = CORRECTED_COLOR.y * 255;
-      IMAGE_DATA.data[HEAD_INDEX + 2] = CORRECTED_COLOR.z * 255;
-      IMAGE_DATA.data[HEAD_INDEX + 3] = 255;
-    }
-    CTX.putImageData(IMAGE_DATA, 0, 0);
-  }
-
-  function update(previousSample, count = 1) {
-    if (count > 1000) {
-      return;
-    }
-
-    const NEW_SAMPLE = sample(previousSample.width, previousSample.height);
-
-    let data = [];
-    for(let i = 0; i < previousSample.data.length; i++) {
-      const COLOR = Vec3.add(
-        Vec3.scale(previousSample.data[i], 1 - 1 / count),
-        Vec3.scale(NEW_SAMPLE.data[i], 1 / count)
+      const CAMERA = new Camera(
+        new Vec3(0, 2, -5),
+        new Vec3(1, 1, 1),
+        0.028,
+        new Vec3(0.036, 0.024)
       );
-      data.push(COLOR);
+      const LIGHT_MATERIAL = new Material(new Vec3(0, 0, 0), new Vec3(10, 10, 10));
+      const WHITE_MATERIAL = new Material(new Vec3(1, 1, 1), new Vec3(0, 0, 0));
+      const BLUE_MATERIAL = new Material(new Vec3(0, 0, 1), new Vec3(0, 0, 0));
+      const YELLOW_MATERIAL = new Material(new Vec3(1, 1, 0), new Vec3(0, 0, 0));
+      const SCENE = new Scene(CAMERA, [
+        new Plane(new Vec3(2, 0, 0), new Vec3(-1, 0, 0), BLUE_MATERIAL), // left
+        new Plane(new Vec3(-2, 0, 0), new Vec3(1, 0, 0), YELLOW_MATERIAL), // right
+        new Plane(new Vec3(0, 4, 0), new Vec3(0, -1, 0), WHITE_MATERIAL), // top
+        new Plane(new Vec3(0, 0, 0), new Vec3(0, 1, 0), WHITE_MATERIAL), // bottom
+        new Plane(new Vec3(0, 0, 2), new Vec3(0, 0, -1), WHITE_MATERIAL), // back
+        new Plane(new Vec3(0, 0, -2), new Vec3(0, 0, 1), WHITE_MATERIAL), // front
+        new Sphere(new Vec3(0, 7.95, 0), 4, LIGHT_MATERIAL), // light
+        new Sphere(new Vec3(0, 1, 0), 1, WHITE_MATERIAL)
+      ]);
+
+      for (let y = 0; y < this.height; y++) {
+        for (let x = 0; x < this.width; x++) {
+          const X = x / this.width - 0.5;
+          const Y = (y / this.height - 0.5) * -1;
+
+          const RAY = SCENE.camera.rayForCoordinate(X, Y);
+          const COLOR = RAY.tracePathInScene(SCENE);
+
+          data.push(COLOR);
+        }
+      }
+
+      return data;
     }
+    update() {
+      const NEW_SAMPLE = this.sample();
 
-    const BUFFER = new Sample(data, previousSample.width, previousSample.height);
-    draw(BUFFER);
+      for (let i = 0; i < this.width * this.height; i++) {
+        const COLOR = Vec3.add(
+          Vec3.scale(this.data[i], 1 - 1 / this.sampleCount),
+          Vec3.scale(NEW_SAMPLE[i], 1 / this.sampleCount)
+        );
+        this.data[i] = COLOR;
+      }
 
-    document.getElementById('sample_count').textContent = `Current sampling count: ${ count }`;
+      this.sampleCount += 1
+    }
+    draw() {
+      const CTX = canvas.getContext('2d');
+      const sRGB_GAMUT = 1 / 2.2;
 
-    window.requestAnimationFrame(() => {
-      update(BUFFER, count + 1);
-    });
+      const IMAGE_DATA = new ImageData(this.width, this.height);
+      for (let i = 0; i < this.width * this.height; i++) {
+        const CORRECTED_COLOR = Vec3.pow(this.data[i], sRGB_GAMUT);
+        const HEAD_INDEX = i * 4;
+        IMAGE_DATA.data[HEAD_INDEX] = CORRECTED_COLOR.x * 255;
+        IMAGE_DATA.data[HEAD_INDEX + 1] = CORRECTED_COLOR.y * 255;
+        IMAGE_DATA.data[HEAD_INDEX + 2] = CORRECTED_COLOR.z * 255;
+        IMAGE_DATA.data[HEAD_INDEX + 3] = 255;
+      }
+      CTX.putImageData(IMAGE_DATA, 0, 0);
+    }
   }
+
+  const RENDERER= new Renderer(canvas.width, canvas.height);
+  const CONSOLE = document.getElementById('sample_count');
+
+  const draw = () => {
+    RENDERER.draw();
+    CONSOLE.textContent =
+      `Current sampling count: ${RENDERER.sampleCount}`;
+
+    window.requestAnimationFrame(draw);
+  }
+
+  draw();
 
   window.addEventListener('DOMContentLoaded', () => {
-    // draw(sample(canvas.width, canvas.height));
-    window.requestAnimationFrame(() => { update(sample(canvas.width, canvas.height)); });
+    for (let i = 0; i < 1000; i++) {
+      window.setTimeout(() => {
+        RENDERER.update();
+      }, 0);
+    }
   });
+
 
 })();
