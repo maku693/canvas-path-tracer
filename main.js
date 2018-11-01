@@ -210,42 +210,20 @@
   }
 
   class Renderer {
-    constructor(width, height) {
-      this.width = width;
-      this.height = height;
-      this.data = this.sample();
+    constructor(canvas, scene) {
+      this.canvas = canvas;
+      this.scene = scene;
       this.sampleCount = 1;
+      this.data = this.sample();
     }
     sample() {
       const data = [];
+      for (let y = 0; y < this.canvas.height; y++) {
+        for (let x = 0; x < this.canvas.width; x++) {
+          const X = x / this.canvas.width - 0.5;
+          const Y = (y / this.canvas.height - 0.5) * -1;
 
-      const CAMERA = new Camera(
-        new Vec3(0, 2, -5),
-        new Vec3(1, 1, 1),
-        0.028,
-        new Vec3(0.036, 0.024)
-      );
-      const LIGHT_MATERIAL = new Material(new Vec3(0, 0, 0), new Vec3(10, 10, 10));
-      const WHITE_MATERIAL = new Material(new Vec3(1, 1, 1), new Vec3(0, 0, 0));
-      const BLUE_MATERIAL = new Material(new Vec3(0, 0, 1), new Vec3(0, 0, 0));
-      const YELLOW_MATERIAL = new Material(new Vec3(1, 1, 0), new Vec3(0, 0, 0));
-      const SCENE = new Scene(CAMERA, [
-        new Plane(new Vec3(2, 0, 0), new Vec3(-1, 0, 0), BLUE_MATERIAL), // left
-        new Plane(new Vec3(-2, 0, 0), new Vec3(1, 0, 0), YELLOW_MATERIAL), // right
-        new Plane(new Vec3(0, 4, 0), new Vec3(0, -1, 0), WHITE_MATERIAL), // top
-        new Plane(new Vec3(0, 0, 0), new Vec3(0, 1, 0), WHITE_MATERIAL), // bottom
-        new Plane(new Vec3(0, 0, 2), new Vec3(0, 0, -1), WHITE_MATERIAL), // back
-        new Plane(new Vec3(0, 0, -2), new Vec3(0, 0, 1), WHITE_MATERIAL), // front
-        new Sphere(new Vec3(0, 7.95, 0), 4, LIGHT_MATERIAL), // light
-        new Sphere(new Vec3(0, 1, 0), 1, WHITE_MATERIAL)
-      ]);
-
-      for (let y = 0; y < this.height; y++) {
-        for (let x = 0; x < this.width; x++) {
-          const X = x / this.width - 0.5;
-          const Y = (y / this.height - 0.5) * -1;
-
-          const RAY = SCENE.camera.rayForCoordinate(X, Y);
+          const RAY = this.scene.camera.rayForCoordinate(X, Y);
           const COLOR = RAY.tracePathInScene(SCENE);
 
           data.push(COLOR);
@@ -257,7 +235,7 @@
     update() {
       const NEW_SAMPLE = this.sample();
 
-      for (let i = 0; i < this.width * this.height; i++) {
+      for (let i = 0; i < this.canvas.width * this.canvas.height; i++) {
         const COLOR = Vec3.add(
           Vec3.scale(this.data[i], 1 - 1 / this.sampleCount),
           Vec3.scale(NEW_SAMPLE[i], 1 / this.sampleCount)
@@ -269,11 +247,11 @@
     }
     draw() {
       const CTX = canvas.getContext('2d');
-      const sRGB_GAMUT = 1 / 2.2;
+      const GAMMA_CORRECTION_POWER = 1 / 2.2;
 
-      const IMAGE_DATA = new ImageData(this.width, this.height);
-      for (let i = 0; i < this.width * this.height; i++) {
-        const CORRECTED_COLOR = Vec3.pow(this.data[i], sRGB_GAMUT);
+      const IMAGE_DATA = new ImageData(this.canvas.width, this.canvas.height);
+      for (let i = 0; i < this.canvas.width * this.canvas.height; i++) {
+        const CORRECTED_COLOR = Vec3.pow(this.data[i], GAMMA_CORRECTION_POWER);
         const HEAD_INDEX = i * 4;
         IMAGE_DATA.data[HEAD_INDEX] = CORRECTED_COLOR.x * 255;
         IMAGE_DATA.data[HEAD_INDEX + 1] = CORRECTED_COLOR.y * 255;
@@ -284,7 +262,28 @@
     }
   }
 
-  const RENDERER= new Renderer(canvas.width, canvas.height);
+  const CAMERA = new Camera(
+    new Vec3(0, 2, -5),
+    new Vec3(1, 1, 1),
+    0.028,
+    new Vec3(0.036, 0.024)
+  );
+  const LIGHT_MATERIAL = new Material(new Vec3(0, 0, 0), new Vec3(10, 10, 10));
+  const WHITE_MATERIAL = new Material(new Vec3(1, 1, 1), new Vec3(0, 0, 0));
+  const BLUE_MATERIAL = new Material(new Vec3(0, 0, 1), new Vec3(0, 0, 0));
+  const YELLOW_MATERIAL = new Material(new Vec3(1, 1, 0), new Vec3(0, 0, 0));
+  const SCENE = new Scene(CAMERA, [
+    new Plane(new Vec3(2, 0, 0), new Vec3(-1, 0, 0), BLUE_MATERIAL), // left
+    new Plane(new Vec3(-2, 0, 0), new Vec3(1, 0, 0), YELLOW_MATERIAL), // right
+    new Plane(new Vec3(0, 4, 0), new Vec3(0, -1, 0), WHITE_MATERIAL), // top
+    new Plane(new Vec3(0, 0, 0), new Vec3(0, 1, 0), WHITE_MATERIAL), // bottom
+    new Plane(new Vec3(0, 0, 2), new Vec3(0, 0, -1), WHITE_MATERIAL), // back
+    new Plane(new Vec3(0, 0, -2), new Vec3(0, 0, 1), WHITE_MATERIAL), // front
+    new Sphere(new Vec3(0, 7.95, 0), 4, LIGHT_MATERIAL), // light
+    new Sphere(new Vec3(0, 1, 0), 1, WHITE_MATERIAL)
+  ]);
+
+  const RENDERER = new Renderer(canvas, SCENE);
   const CONSOLE = document.getElementById('sample_count');
 
   const draw = () => {
@@ -294,8 +293,6 @@
 
     window.requestAnimationFrame(draw);
   }
-
-  draw();
 
   window.addEventListener('DOMContentLoaded', () => {
     for (let i = 0; i < 1000; i++) {
