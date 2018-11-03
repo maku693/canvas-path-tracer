@@ -292,13 +292,18 @@
   const RENDERER = new Renderer(canvas, SCENE);
   const CONSOLE = document.getElementById('sample_count');
 
+  const draw = () => {
+    RENDERER.draw();
+    CONSOLE.textContent =
+      `Current sampling count: ${RENDERER.sampleCount}`;
+
+    window.requestAnimationFrame(draw);
+  }
+
   window.addEventListener('DOMContentLoaded', () => {
     for (let i = 0; i < 1000; i++) {
       window.setTimeout(() => {
         RENDERER.update();
-        RENDERER.draw();
-        CONSOLE.textContent =
-          `Current sampling count: ${RENDERER.sampleCount}`;
       }, 0);
     }
   });
