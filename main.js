@@ -214,19 +214,25 @@
       this.canvas = canvas;
       this.scene = scene;
       this.sampleCount = 1;
+      this.multiSample = 2;
       this.data = this.sample();
     }
     sample() {
       const data = [];
       for (let y = 0; y < this.canvas.height; y++) {
         for (let x = 0; x < this.canvas.width; x++) {
-          const X = x / this.canvas.width - 0.5;
-          const Y = (y / this.canvas.height - 0.5) * -1;
-
-          const RAY = this.scene.camera.rayForCoordinate(X, Y);
-          const COLOR = RAY.tracePathInScene(SCENE);
-
-          data.push(COLOR);
+          let color = new Vec3(0, 0, 0);
+          for (let oy = 0; oy < this.multiSample; oy++) {
+            for (let ox = 0; ox < this.multiSample; ox++) {
+              const X = (x + 1 / this.multiSample * ox) / this.canvas.width - 0.5;
+              const Y = ((y + 1 / this.multiSample * oy) / this.canvas.height - 0.5) * -1;
+  
+              const RAY = this.scene.camera.rayForCoordinate(X, Y);
+              const newColor = RAY.tracePathInScene(SCENE);
+              color = Vec3.scale(Vec3.add(color, newColor), 0.5)
+            }
+          }
+          data.push(color);
         }
       }
 
