@@ -299,6 +299,7 @@
 
     window.requestAnimationFrame(draw);
   }
+  draw();
 
   window.addEventListener('DOMContentLoaded', () => {
     for (let i = 0; i < 1000; i++) {
@@ -307,6 +308,4 @@
       }, 0);
     }
   });
-
-
 })();
