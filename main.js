@@ -213,15 +213,16 @@
     constructor(canvas, scene) {
       this.canvas = canvas;
       this.scene = scene;
-      this.sampleCount = 1;
       this.multiSample = 2;
-      this.data = this.sample();
+      this.sampleCount = 0;
+      this.data = new Array(this.canvas.width * this.canvas.height).fill(Vec3.zero());
     }
-    sample() {
+    update() {
       const data = [];
       for (let y = 0; y < this.canvas.height; y++) {
         for (let x = 0; x < this.canvas.width; x++) {
-          let color = new Vec3(0, 0, 0);
+          let color = Vec3.zero();
+          let sampleCount = 0;
           for (let oy = 0; oy < this.multiSample; oy++) {
             for (let ox = 0; ox < this.multiSample; ox++) {
               const X = (x + 1 / this.multiSample * ox) / this.canvas.width - 0.5;
@@ -229,27 +230,24 @@
   
               const RAY = this.scene.camera.rayForCoordinate(X, Y);
               const newColor = RAY.tracePathInScene(SCENE);
-              color = Vec3.scale(Vec3.add(color, newColor), 0.5)
+              sampleCount += 1;
+              color = Vec3.add(
+                Vec3.scale(color, 1 - 1 / sampleCount),
+                Vec3.scale(newColor, 1 / sampleCount)
+              );
             }
           }
           data.push(color);
         }
       }
 
-      return data;
-    }
-    update() {
-      const NEW_SAMPLE = this.sample();
-
-      for (let i = 0; i < this.canvas.width * this.canvas.height; i++) {
-        const COLOR = Vec3.add(
+      this.sampleCount += 1;
+      for (let i = 0; i < this.data.length; i++) {
+        this.data[i] = Vec3.add(
           Vec3.scale(this.data[i], 1 - 1 / this.sampleCount),
-          Vec3.scale(NEW_SAMPLE[i], 1 / this.sampleCount)
+          Vec3.scale(data[i], 1 / this.sampleCount)
         );
-        this.data[i] = COLOR;
       }
-
-      this.sampleCount += 1
     }
     draw() {
       const CTX = canvas.getContext('2d');
