@@ -57,12 +57,13 @@
   }
 
   class Camera {
-    constructor(position, direction, focalLength, filmSize, filmSpeed) {
+    constructor(position, direction, focalLength, filmSize, filmSpeed, multiSample) {
       this.position = position;
       this.direction = direction;
       this.focalLength = focalLength;
       this.filmSize = filmSize;
       this.filmSpeed = filmSpeed;
+      this.multiSample = multiSample;
     }
     rayForCoordinate(x, y) {
       const RAW_D = new Vec3(
@@ -214,7 +215,6 @@
     constructor(canvas, scene) {
       this.canvas = canvas;
       this.scene = scene;
-      this.multiSample = 2;
       this.sampleCount = 0;
       this.data = new Array(this.canvas.width * this.canvas.height).fill(Vec3.zero());
     }
@@ -224,10 +224,10 @@
         for (let x = 0; x < this.canvas.width; x++) {
           let color = Vec3.zero();
           let sampleCount = 0;
-          for (let oy = 0; oy < this.multiSample; oy++) {
-            for (let ox = 0; ox < this.multiSample; ox++) {
-              const X = (x + 1 / this.multiSample * ox) / this.canvas.width - 0.5;
-              const Y = ((y + 1 / this.multiSample * oy) / this.canvas.height - 0.5) * -1;
+          for (let oy = 0; oy < this.scene.camera.multiSample; oy++) {
+            for (let ox = 0; ox < this.scene.camera.multiSample; ox++) {
+              const X = (x + 1 / this.scene.camera.multiSample * ox) / this.canvas.width - 0.5;
+              const Y = ((y + 1 / this.scene.camera.multiSample * oy) / this.canvas.height - 0.5) * -1;
   
               const RAY = this.scene.camera.rayForCoordinate(X, Y);
               const newColor = Vec3.scale(
@@ -276,6 +276,7 @@
     new Vec3(1, 1, 1),
     0.028,
     new Vec3(0.036, 0.024),
+    2,
     2
   );
   const LIGHT_MATERIAL = new Material(new Vec3(0, 0, 0), new Vec3(10, 10, 10));
