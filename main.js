@@ -276,7 +276,7 @@
     new Vec3(1, 1, 1),
     0.028,
     new Vec3(0.036, 0.024),
-    2,
+    1.5,
     2
   );
   const LIGHT_MATERIAL = new Material(new Vec3(0, 0, 0), new Vec3(10, 10, 10));
