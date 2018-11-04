@@ -57,11 +57,12 @@
   }
 
   class Camera {
-    constructor(position, direction, focalLength, filmSize) {
+    constructor(position, direction, focalLength, filmSize, filmSpeed) {
       this.position = position;
       this.direction = direction;
       this.focalLength = focalLength;
       this.filmSize = filmSize;
+      this.filmSpeed = filmSpeed;
     }
     rayForCoordinate(x, y) {
       const RAW_D = new Vec3(
@@ -229,7 +230,11 @@
               const Y = ((y + 1 / this.multiSample * oy) / this.canvas.height - 0.5) * -1;
   
               const RAY = this.scene.camera.rayForCoordinate(X, Y);
-              const newColor = RAY.tracePathInScene(SCENE);
+              const newColor = Vec3.scale(
+                RAY.tracePathInScene(SCENE),
+                this.scene.camera.filmSpeed
+              );
+
               sampleCount += 1;
               color = Vec3.add(
                 Vec3.scale(color, 1 - 1 / sampleCount),
@@ -270,7 +275,8 @@
     new Vec3(0, 2, -5),
     new Vec3(1, 1, 1),
     0.028,
-    new Vec3(0.036, 0.024)
+    new Vec3(0.036, 0.024),
+    2
   );
   const LIGHT_MATERIAL = new Material(new Vec3(0, 0, 0), new Vec3(10, 10, 10));
   const WHITE_MATERIAL = new Material(new Vec3(1, 1, 1), new Vec3(0, 0, 0));
@@ -300,7 +306,7 @@
   draw();
 
   window.addEventListener('DOMContentLoaded', () => {
-    for (let i = 0; i < 1000; i++) {
+    for (let i = 0; i < 2000; i++) {
       window.setTimeout(() => {
         RENDERER.update();
       }, 0);
