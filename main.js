@@ -1,5 +1,5 @@
 (() => {
-  'use strict';
+  "use strict";
 
   class Vec3 {
     constructor(x, y, z) {
@@ -35,7 +35,11 @@
       return new Vec3(a.x / b.x, a.y / b.y, a.z / b.z);
     }
     static cross(a, b) {
-      return new Vec3(a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x);
+      return new Vec3(
+        a.y * b.z - a.z * b.y,
+        a.z * b.x - a.x * b.z,
+        a.x * b.y - a.y * b.x
+      );
     }
     static dot(a, b) {
       return a.x * b.x + a.y * b.y + a.z * b.z;
@@ -71,7 +75,14 @@
   }
 
   class Camera {
-    constructor(position, direction, focalLength, filmDPM, filmSpeed, multiSample) {
+    constructor(
+      position,
+      direction,
+      focalLength,
+      filmDPM,
+      filmSpeed,
+      multiSample
+    ) {
       this.position = position;
       this.direction = direction;
       this.focalLength = focalLength;
@@ -114,7 +125,7 @@
       if (DN >= 0) {
         return new Intersection(false);
       }
-      const T = VN / DN * -1;
+      const T = (VN / DN) * -1;
       if (T <= 0) {
         return new Intersection(false);
       }
@@ -136,7 +147,7 @@
       if (D < 0) {
         return new Intersection(false);
       }
-      const SQRT_D = Math.sqrt(D)
+      const SQRT_D = Math.sqrt(D);
       const T1 = -1 * B + SQRT_D;
       const T2 = -1 * B - SQRT_D;
       if (T2 > 0) {
@@ -186,18 +197,15 @@
       }
 
       const NEW_RAY = new Ray(
-        Vec3.add(this.origin, Vec3.scale(this.direction, INTERSECTION.distance)),
+        Vec3.add(
+          this.origin,
+          Vec3.scale(this.direction, INTERSECTION.distance)
+        ),
         Ray.randomReflectionFromNormal(INTERSECTION.normal)
       );
 
-      const COS_THETA = Vec3.dot(
-        NEW_RAY.direction,
-        INTERSECTION.normal
-      );
-      const DIFFUSE = Vec3.scale(
-        INTERSECTION.material.color,
-        COS_THETA * 2
-      );
+      const COS_THETA = Vec3.dot(NEW_RAY.direction, INTERSECTION.normal);
+      const DIFFUSE = Vec3.scale(INTERSECTION.material.color, COS_THETA * 2);
       const REFLECTION = NEW_RAY.tracePathInScene(scene, depth + 1);
       return Vec3.add(
         INTERSECTION.material.emission,
@@ -227,11 +235,13 @@
       this.scene = scene;
       this.camera = camera;
       this.sampleCount = 0;
-      this.data = new Array(this.canvas.width * this.canvas.height).fill(Vec3.zero());
+      this.data = new Array(this.canvas.width * this.canvas.height).fill(
+        Vec3.zero()
+      );
     }
     update() {
       const data = [];
-      
+
       const minY = this.canvas.height / -2;
       const maxY = this.canvas.height / 2;
       const minX = this.canvas.width / -2;
@@ -268,7 +278,7 @@
       }
     }
     draw() {
-      const CTX = canvas.getContext('2d');
+      const CTX = canvas.getContext("2d");
       const GAMMA_CORRECTION_POWER = 1 / 2.2;
 
       const IMAGE_DATA = new ImageData(this.canvas.width, this.canvas.height);
@@ -308,18 +318,17 @@
   ]);
 
   const RENDERER = new Renderer(canvas, SCENE, CAMERA);
-  const CONSOLE = document.getElementById('sample_count');
+  const CONSOLE = document.getElementById("sample_count");
 
   const draw = () => {
     RENDERER.draw();
-    CONSOLE.textContent =
-      `Current sampling count: ${RENDERER.sampleCount}`;
+    CONSOLE.textContent = `Current sampling count: ${RENDERER.sampleCount}`;
 
     window.requestAnimationFrame(draw);
-  }
+  };
   draw();
 
-  window.addEventListener('DOMContentLoaded', () => {
+  window.addEventListener("DOMContentLoaded", () => {
     for (let i = 0; i < 2000; i++) {
       window.setTimeout(() => {
         RENDERER.update();
