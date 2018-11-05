@@ -260,9 +260,10 @@
 
       this.sampleCount += 1;
       for (let i = 0; i < this.data.length; i++) {
+        const newSampleWeight = 1 / this.sampleCount;
         this.data[i] = Vec3.add(
-          Vec3.scale(this.data[i], 1 - 1 / this.sampleCount),
-          Vec3.scale(data[i], 1 / this.sampleCount)
+          Vec3.scale(data[i], newSampleWeight),
+          Vec3.scale(this.data[i], 1 - newSampleWeight)
         );
       }
     }
