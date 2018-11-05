@@ -50,9 +50,23 @@
   }
 
   class Scene {
-    constructor(camera, objects) {
-      this.camera = camera;
+    constructor(objects) {
       this.objects = objects;
+    }
+    intersectionWithRay(ray) {
+      let nearestDistance = Number.MAX_VALUE;
+      let nearestIntersection;
+      for (let object of this.objects) {
+        let i = object.intersectionWithRay(ray);
+        if (!i.isHit) {
+          continue;
+        }
+        if (nearestDistance > i.distance) {
+          nearestDistance = i.distance;
+          nearestIntersection = i;
+        }
+      }
+      return nearestIntersection;
     }
   }
 
@@ -161,27 +175,12 @@
       this.origin = origin;
       this.direction = direction;
     }
-    intersectionWithScene(scene) {
-      let nearestDistance = Number.MAX_VALUE;
-      let nearestIntersection;
-      for (let object of scene.objects) {
-        let i = object.intersectionWithRay(this);
-        if (!i.isHit) {
-          continue;
-        }
-        if (nearestDistance > i.distance) {
-          nearestDistance = i.distance;
-          nearestIntersection = i;
-        }
-      }
-      return nearestIntersection;
-    }
     tracePathInScene(scene, depth = 0) {
       if (depth === 5) {
         return new Vec3(0, 0, 0);
       }
 
-      const INTERSECTION = this.intersectionWithScene(scene);
+      const INTERSECTION = scene.intersectionWithRay(this);
       if (!INTERSECTION) {
         return new Vec3(0, 0, 0);
       }
