@@ -222,9 +222,10 @@
   }
 
   class Renderer {
-    constructor(canvas, scene) {
+    constructor(canvas, scene, camera) {
       this.canvas = canvas;
       this.scene = scene;
+      this.camera = camera;
       this.sampleCount = 0;
       this.data = new Array(this.canvas.width * this.canvas.height).fill(Vec3.zero());
     }
@@ -237,12 +238,12 @@
       const maxX = this.canvas.width / 2;
       for (let y = maxY; y > minY; y--) {
         for (let x = minX; x < maxX; x++) {
-          const rays = this.scene.camera.raysForCoordinate(x, y);
+          const rays = this.camera.raysForCoordinate(x, y);
           const color = rays
             .map(ray => {
               return Vec3.scale(
                 ray.tracePathInScene(this.scene),
-                this.scene.camera.filmSpeed
+                this.camera.filmSpeed
               );
             })
             .reduce((prev, next, i) => {
@@ -294,7 +295,7 @@
   const WHITE_MATERIAL = new Material(new Vec3(1, 1, 1), new Vec3(0, 0, 0));
   const BLUE_MATERIAL = new Material(new Vec3(0, 0, 1), new Vec3(0, 0, 0));
   const YELLOW_MATERIAL = new Material(new Vec3(1, 1, 0), new Vec3(0, 0, 0));
-  const SCENE = new Scene(CAMERA, [
+  const SCENE = new Scene([
     new Plane(new Vec3(2, 0, 0), new Vec3(-1, 0, 0), BLUE_MATERIAL), // left
     new Plane(new Vec3(-2, 0, 0), new Vec3(1, 0, 0), YELLOW_MATERIAL), // right
     new Plane(new Vec3(0, 4, 0), new Vec3(0, -1, 0), WHITE_MATERIAL), // top
@@ -305,7 +306,7 @@
     new Sphere(new Vec3(0, 1, 0), 1, WHITE_MATERIAL)
   ]);
 
-  const RENDERER = new Renderer(canvas, SCENE);
+  const RENDERER = new Renderer(canvas, SCENE, CAMERA);
   const CONSOLE = document.getElementById('sample_count');
 
   const draw = () => {
