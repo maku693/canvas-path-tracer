@@ -126,7 +126,7 @@
         return new Intersection(false);
       }
       const t = (vn / dn) * -1;
-      if (t <= 0) {
+      if (t < 0) {
         return new Intersection(false);
       }
       return new Intersection(true, t, this.normal, this.material);
