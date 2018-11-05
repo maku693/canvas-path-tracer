@@ -65,7 +65,7 @@
         if (!i.isHit) {
           continue;
         }
-        if (nearestDistance > i.distance) {
+        if (i.distance < nearestDistance) {
           nearestDistance = i.distance;
           nearestIntersection = i;
         }
@@ -119,17 +119,17 @@
       this.material = material;
     }
     intersectionWithRay(ray) {
-      const V = Vec3.subtract(ray.origin, this.center);
-      const VN = Vec3.dot(V, this.normal);
-      const DN = Vec3.dot(ray.direction, this.normal);
-      if (DN >= 0) {
+      const v = Vec3.subtract(ray.origin, this.center);
+      const vn = Vec3.dot(v, this.normal);
+      const dn = Vec3.dot(ray.direction, this.normal);
+      if (0 <= dn) {
         return new Intersection(false);
       }
-      const T = (VN / DN) * -1;
-      if (T <= 0) {
+      const t = (vn / dn) * -1;
+      if (t <= 0) {
         return new Intersection(false);
       }
-      return new Intersection(true, T, this.normal, this.material);
+      return new Intersection(true, t, this.normal, this.material);
     }
   }
 
@@ -140,28 +140,28 @@
       this.material = material;
     }
     intersectionWithRay(ray) {
-      const V = Vec3.subtract(ray.origin, this.center);
-      const B = Vec3.dot(V, ray.direction);
-      const C = V.squaredLength() - Math.pow(this.radius, 2);
-      const D = Math.pow(B, 2) - C;
-      if (D < 0) {
+      const v = Vec3.subtract(ray.origin, this.center);
+      const b = Vec3.dot(v, ray.direction);
+      const c = v.squaredLength() - Math.pow(this.radius, 2);
+      const d = Math.pow(b, 2) - c;
+      if (d < 0) {
         return new Intersection(false);
       }
-      const SQRT_D = Math.sqrt(D);
-      const T1 = -1 * B + SQRT_D;
-      const T2 = -1 * B - SQRT_D;
-      if (T2 > 0) {
-        return this.createIntersection(ray, T2);
-      } else if (T1 > 0) {
-        return this.createIntersection(ray, T1);
+      const sqrtD = Math.sqrt(d);
+      const t1 = -1 * b + sqrtD;
+      const t2 = -1 * b - sqrtD;
+      if (0 < t2) {
+        return this.createIntersection(ray, t2);
+      } else if (0 < t1) {
+        return this.createIntersection(ray, t1);
       } else {
         return new Intersection(false);
       }
     }
     createIntersection(ray, t) {
-      const P = Vec3.add(ray.origin, Vec3.scale(ray.direction, t));
-      const NORMAL = Vec3.subtract(P, this.center).normalize();
-      return new Intersection(true, t, NORMAL, this.material);
+      const p = Vec3.add(ray.origin, Vec3.scale(ray.direction, t));
+      const normal = Vec3.subtract(p, this.center).normalize();
+      return new Intersection(true, t, normal, this.material);
     }
   }
 
@@ -191,41 +191,41 @@
         return new Vec3(0, 0, 0);
       }
 
-      const INTERSECTION = scene.intersectionWithRay(this);
-      if (!INTERSECTION) {
+      const intersection = scene.intersectionWithRay(this);
+      if (!intersection) {
         return new Vec3(0, 0, 0);
       }
 
-      const NEW_RAY = new Ray(
+      const newRay = new Ray(
         Vec3.add(
           this.origin,
-          Vec3.scale(this.direction, INTERSECTION.distance)
+          Vec3.scale(this.direction, intersection.distance)
         ),
-        Ray.randomReflectionFromNormal(INTERSECTION.normal)
+        Ray.randomReflectionFromNormal(intersection.normal)
       );
 
-      const COS_THETA = Vec3.dot(NEW_RAY.direction, INTERSECTION.normal);
-      const DIFFUSE = Vec3.scale(INTERSECTION.material.color, COS_THETA * 2);
-      const REFLECTION = NEW_RAY.tracePathInScene(scene, depth + 1);
+      const cosTheta = Vec3.dot(newRay.direction, intersection.normal);
+      const diffuse = Vec3.scale(intersection.material.color, cosTheta * 2);
+      const reflection = newRay.tracePathInScene(scene, depth + 1);
       return Vec3.add(
-        INTERSECTION.material.emission,
-        Vec3.multiply(DIFFUSE, REFLECTION)
+        intersection.material.emission,
+        Vec3.multiply(diffuse, reflection)
       );
     }
 
     static randomReflectionFromNormal(normal) {
-      const THETA = Math.acos(Math.random());
-      const PHI = 2 * Math.PI * Math.random();
-      const RANDOM_DIRECTION = new Vec3(
-        Math.sin(THETA) * Math.cos(PHI),
-        Math.cos(THETA),
-        Math.sin(THETA) * Math.sin(PHI)
+      const theta = Math.acos(Math.random());
+      const phi = 2 * Math.PI * Math.random();
+      const randomDirection = new Vec3(
+        Math.sin(theta) * Math.cos(phi),
+        Math.cos(theta),
+        Math.sin(theta) * Math.sin(phi)
       );
 
-      if (Vec3.dot(normal, RANDOM_DIRECTION) < 0) {
-        return Vec3.scale(RANDOM_DIRECTION, -1);
+      if (Vec3.dot(normal, randomDirection) < 0) {
+        return Vec3.scale(randomDirection, -1);
       }
-      return RANDOM_DIRECTION;
+      return randomDirection;
     }
   }
 
@@ -278,23 +278,23 @@
       }
     }
     draw() {
-      const CTX = canvas.getContext("2d");
-      const GAMMA_CORRECTION_POWER = 1 / 2.2;
+      const ctx = this.canvas.getContext("2d");
+      const gammaCorrectionPower = 1 / 2.2;
 
-      const IMAGE_DATA = new ImageData(this.canvas.width, this.canvas.height);
+      const imageData = new ImageData(this.canvas.width, this.canvas.height);
       for (let i = 0; i < this.canvas.width * this.canvas.height; i++) {
-        const CORRECTED_COLOR = Vec3.pow(this.data[i], GAMMA_CORRECTION_POWER);
-        const HEAD_INDEX = i * 4;
-        IMAGE_DATA.data[HEAD_INDEX] = CORRECTED_COLOR.x * 255;
-        IMAGE_DATA.data[HEAD_INDEX + 1] = CORRECTED_COLOR.y * 255;
-        IMAGE_DATA.data[HEAD_INDEX + 2] = CORRECTED_COLOR.z * 255;
-        IMAGE_DATA.data[HEAD_INDEX + 3] = 255;
+        const corrected = Vec3.pow(this.data[i], gammaCorrectionPower);
+        const di = i * 4;
+        imageData.data[di] = corrected.x * 255;
+        imageData.data[di + 1] = corrected.y * 255;
+        imageData.data[di + 2] = corrected.z * 255;
+        imageData.data[di + 3] = 255;
       }
-      CTX.putImageData(IMAGE_DATA, 0, 0);
+      ctx.putImageData(imageData, 0, 0);
     }
   }
 
-  const CAMERA = new Camera(
+  const camera = new Camera(
     new Vec3(0, 2, -5),
     new Vec3(1, 1, 1),
     0.028,
@@ -302,27 +302,26 @@
     1.5,
     2
   );
-  const LIGHT_MATERIAL = new Material(new Vec3(0, 0, 0), new Vec3(10, 10, 10));
-  const WHITE_MATERIAL = new Material(new Vec3(1, 1, 1), new Vec3(0, 0, 0));
-  const BLUE_MATERIAL = new Material(new Vec3(0, 0, 1), new Vec3(0, 0, 0));
-  const YELLOW_MATERIAL = new Material(new Vec3(1, 1, 0), new Vec3(0, 0, 0));
-  const SCENE = new Scene([
-    new Plane(new Vec3(2, 0, 0), new Vec3(-1, 0, 0), BLUE_MATERIAL), // left
-    new Plane(new Vec3(-2, 0, 0), new Vec3(1, 0, 0), YELLOW_MATERIAL), // right
-    new Plane(new Vec3(0, 4, 0), new Vec3(0, -1, 0), WHITE_MATERIAL), // top
-    new Plane(new Vec3(0, 0, 0), new Vec3(0, 1, 0), WHITE_MATERIAL), // bottom
-    new Plane(new Vec3(0, 0, 2), new Vec3(0, 0, -1), WHITE_MATERIAL), // back
-    new Plane(new Vec3(0, 0, -2), new Vec3(0, 0, 1), WHITE_MATERIAL), // front
-    new Sphere(new Vec3(0, 7.95, 0), 4, LIGHT_MATERIAL), // light
-    new Sphere(new Vec3(0, 1, 0), 1, WHITE_MATERIAL)
+  const lightMaterial = new Material(new Vec3(0, 0, 0), new Vec3(10, 10, 10));
+  const whiteMaterial = new Material(new Vec3(1, 1, 1), new Vec3(0, 0, 0));
+  const blueMaterial = new Material(new Vec3(0, 0, 1), new Vec3(0, 0, 0));
+  const yellowMaterial = new Material(new Vec3(1, 1, 0), new Vec3(0, 0, 0));
+  const scene = new Scene([
+    new Plane(new Vec3(2, 0, 0), new Vec3(-1, 0, 0), blueMaterial), // left
+    new Plane(new Vec3(-2, 0, 0), new Vec3(1, 0, 0), yellowMaterial), // right
+    new Plane(new Vec3(0, 4, 0), new Vec3(0, -1, 0), whiteMaterial), // top
+    new Plane(new Vec3(0, 0, 0), new Vec3(0, 1, 0), whiteMaterial), // bottom
+    new Plane(new Vec3(0, 0, 2), new Vec3(0, 0, -1), whiteMaterial), // back
+    new Plane(new Vec3(0, 0, -2), new Vec3(0, 0, 1), whiteMaterial), // front
+    new Sphere(new Vec3(0, 7.95, 0), 4, lightMaterial), // light
+    new Sphere(new Vec3(0, 1, 0), 1, whiteMaterial)
   ]);
 
-  const RENDERER = new Renderer(canvas, SCENE, CAMERA);
-  const CONSOLE = document.getElementById("sample_count");
+  const renderer = new Renderer(canvas, scene, camera);
 
   const draw = () => {
-    RENDERER.draw();
-    CONSOLE.textContent = `Current sampling count: ${RENDERER.sampleCount}`;
+    renderer.draw();
+    debug.textContent = `Current sampling count: ${renderer.sampleCount}`;
 
     window.requestAnimationFrame(draw);
   };
@@ -331,7 +330,7 @@
   window.addEventListener("DOMContentLoaded", () => {
     for (let i = 0; i < 2000; i++) {
       window.setTimeout(() => {
-        RENDERER.update();
+        renderer.update();
       }, 0);
     }
   });
