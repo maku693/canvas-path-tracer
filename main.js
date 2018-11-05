@@ -57,22 +57,33 @@
   }
 
   class Camera {
-    constructor(position, direction, focalLength, filmSize, filmSpeed, multiSample) {
+    constructor(position, direction, focalLength, filmDPM, filmSpeed, multiSample) {
       this.position = position;
       this.direction = direction;
       this.focalLength = focalLength;
-      this.filmSize = filmSize;
+      this.filmDPM = filmDPM;
       this.filmSpeed = filmSpeed;
       this.multiSample = multiSample;
     }
-    rayForCoordinate(x, y) {
-      const RAW_D = new Vec3(
-        this.filmSize.x * x,
-        this.filmSize.y * y,
+    raysForCoordinate(x, y) {
+      const rays = [];
+      const cell2center = new Vec3(
+        x / this.filmDPM,
+        y / this.filmDPM,
         this.focalLength
       );
-      const D = Vec3.multiply(this.direction, RAW_D).normalize();
-      return new Ray(this.position, D);
+
+      const offsetMin = this.multiSample / -2;
+      const offsetMax = this.multiSample / 2;
+      for (let ox = offsetMin; ox < offsetMax; ox++) {
+        for (let oy = offsetMin; oy < offsetMax; oy++) {
+          const offset = Vec3.scale(new Vec3(ox, oy, 0), 1 / this.filmDPM);
+          const splitted = Vec3.add(cell2center, offset);
+          const direction = Vec3.multiply(this.direction, splitted).normalize();
+          rays.push(new Ray(this.position, direction));
+        }
+      }
+      return rays;
     }
   }
 
@@ -220,28 +231,29 @@
     }
     update() {
       const data = [];
-      for (let y = 0; y < this.canvas.height; y++) {
-        for (let x = 0; x < this.canvas.width; x++) {
-          let color = Vec3.zero();
-          let sampleCount = 0;
-          for (let oy = 0; oy < this.scene.camera.multiSample; oy++) {
-            for (let ox = 0; ox < this.scene.camera.multiSample; ox++) {
-              const X = (x + 1 / this.scene.camera.multiSample * ox) / this.canvas.width - 0.5;
-              const Y = ((y + 1 / this.scene.camera.multiSample * oy) / this.canvas.height - 0.5) * -1;
-  
-              const RAY = this.scene.camera.rayForCoordinate(X, Y);
-              const newColor = Vec3.scale(
-                RAY.tracePathInScene(SCENE),
+      
+      const minY = this.canvas.height / -2;
+      const maxY = this.canvas.height / 2;
+      const minX = this.canvas.width / -2;
+      const maxX = this.canvas.width / 2;
+      for (let y = maxY; y > minY; y--) {
+        for (let x = minX; x < maxX; x++) {
+          const rays = this.scene.camera.raysForCoordinate(x, y);
+          const color = rays
+            .map(ray => {
+              return Vec3.scale(
+                ray.tracePathInScene(this.scene),
                 this.scene.camera.filmSpeed
               );
-
-              sampleCount += 1;
-              color = Vec3.add(
-                Vec3.scale(color, 1 - 1 / sampleCount),
-                Vec3.scale(newColor, 1 / sampleCount)
+            })
+            .reduce((prev, next, i) => {
+              const sampleCount = i + 1;
+              const nextWeight = 1 / sampleCount;
+              return Vec3.add(
+                Vec3.scale(next, nextWeight),
+                Vec3.scale(prev, 1 - nextWeight)
               );
-            }
-          }
+            });
           data.push(color);
         }
       }
@@ -275,7 +287,7 @@
     new Vec3(0, 2, -5),
     new Vec3(1, 1, 1),
     0.028,
-    new Vec3(0.036, 0.024),
+    10000,
     1.5,
     2
   );
