@@ -321,7 +321,7 @@
 
   const draw = () => {
     renderer.draw();
-    debug.textContent = `Current sampling count: ${renderer.sampleCount}`;
+    debug.textContent = `Current sample count: ${renderer.sampleCount}`;
 
     window.requestAnimationFrame(draw);
   };
